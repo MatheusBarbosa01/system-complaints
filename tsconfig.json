@@ -1,0 +1,17 @@
+
+{
+  "compilerOptions": {
+    "target": "ES2017",                 // Versão JS alvo
+    "module": "ESNext",                 // Módulo do código gerado
+    "jsx": "react-jsx",                 // JSX transform para React 17+
+    "strict": true,                    // Habilita verificações estritas
+    "esModuleInterop": true,           // Compatibilidade de importações
+    "skipLibCheck": true,              // Ignora checagem de arquivos de tipos de bibliotecas
+    "forceConsistentCasingInFileNames": true,  // Consistência de case
+    "moduleResolution": "node",        // Resolução de módulos estilo Node
+    "resolveJsonModule": true,         // Permite importar JSON
+    "isolatedModules": true            // Suporte para compilação isolada de arquivos
+  },
+  "include": ["src"],                  // Pasta com código fonte
+  "exclude": ["node_modules", "build"]// Pastas a excluir
+}
