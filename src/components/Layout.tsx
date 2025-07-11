@@ -106,7 +106,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         anchor="left"
         open={open}
         sx={{
-          width: drawerWidth,
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             backgroundColor: '#1e1e1e',
@@ -153,7 +152,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.leavingScreen,
             }),
-          marginLeft: open ? 10 : 0,
+          marginLeft: open ? 30 : 0,
         }}
       >
         <Toolbar />
