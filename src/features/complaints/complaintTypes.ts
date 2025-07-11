@@ -4,6 +4,7 @@ export interface ComplaintListDto {
   resumedDescription: string;
   status: string;
   createdAt: string;
+  priority: string;
 }
   
 export interface ComplaintDetailDto {
@@ -14,6 +15,7 @@ export interface ComplaintDetailDto {
   status: string;
   cpf: string;
   email: string;
+  priority: string
 }
 
 export interface ComplaintUpdateDto{

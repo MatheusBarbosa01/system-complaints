@@ -1,10 +1,8 @@
-import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import {
   TextField, Button, Paper, Typography, Box, Snackbar,
-  Alert, FormControl, Select, MenuItem, LinearProgress, IconButton
+  Alert, FormControl, Select, MenuItem, LinearProgress
 } from '@mui/material';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Layout from '../components/Layout';
@@ -18,8 +16,6 @@ const ComplaintForm: React.FC = () => {
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,32 +33,17 @@ const ComplaintForm: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('priority', priority);
-    if (attachment) {
-      formData.append('attachment', attachment);
-    }
-
     try {
-      await api.post('/complaints', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+      const res = await api.post('/complaints', {
+        title,
+        description,
+        priority,
       });
+
       setSuccess(true);
-      setTimeout(() => navigate('/'), 1500);
+      setTimeout(() => navigate('/'), 4000);
     } catch {
       alert('Erro ao criar reclamação');
-    }
-  };
-
-  const handleAttachmentChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAttachment(file);
-      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -80,7 +61,6 @@ const ComplaintForm: React.FC = () => {
       </Typography>
 
       <Box display="flex" alignItems="center" gap={1} mb={1}>
-        <ReportProblemIcon sx={{ fontSize: 30, color: '#1976d2' }} />
         <Typography variant="h6" fontWeight="bold">Reclamação do Usuário</Typography>
       </Box>
 
@@ -100,18 +80,13 @@ const ComplaintForm: React.FC = () => {
         <Typography variant="body2"><strong>Email:</strong> {email}</Typography>
       </Box>
 
-      <Paper elevation={3} sx={{
-        p: 4,
-        maxWidth: 700,
-        mx: 'auto',
-        borderLeft: '6px solid #1976d2',
-        boxShadow: '0px 0px 8px rgba(25, 118, 210, 0.15)',
-      }}>
+      <Paper elevation={3} sx={{ p: 4, maxWidth: 700, mx:'auto' ,borderLeft: '6px solid #1976d2' }}>
         <Typography variant="subtitle1" gutterBottom>
           Olá, <strong>{name || 'usuário'}</strong>, preencha os seguintes campos para enviar sua reclamação:
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column" gap={3} mt={3}>
+
           <FormControl fullWidth>
             <Typography fontSize={14} fontWeight="bold" color="primary" mb={0.5}>Título:</Typography>
             <TextField
@@ -119,14 +94,6 @@ const ComplaintForm: React.FC = () => {
               onChange={e => setTitle(e.target.value)}
               required
               placeholder="Digite o título da sua reclamação"
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#1976d2' },
-                  '&:hover fieldset': { borderColor: '#115293' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
             />
           </FormControl>
 
@@ -139,14 +106,6 @@ const ComplaintForm: React.FC = () => {
               onChange={e => setDescription(e.target.value)}
               required
               placeholder="Descreva o problema com detalhes"
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#1976d2' },
-                  '&:hover fieldset': { borderColor: '#115293' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
             />
           </FormControl>
 
@@ -156,18 +115,6 @@ const ComplaintForm: React.FC = () => {
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               required
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#1976d2',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#115293',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#1976d2',
-                },
-              }}
             >
               <MenuItem value="baixa">Baixa</MenuItem>
               <MenuItem value="média">Média</MenuItem>
@@ -175,37 +122,11 @@ const ComplaintForm: React.FC = () => {
             </Select>
           </FormControl>
 
-          <FormControl fullWidth>
-            <Typography fontSize={14} fontWeight="bold" color="primary" mb={0.5}>Anexar imagem (opcional):</Typography>
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<UploadFileIcon />}
-              sx={{ borderColor: '#1976d2', color: '#1976d2' }}
-            >
-              Escolher arquivo
-              <input type="file" accept="image/*" hidden onChange={handleAttachmentChange} />
-            </Button>
-
-            {previewUrl && (
-              <Box mt={2}>
-                <Typography fontSize={12} color="gray">Pré-visualização:</Typography>
-                <Box component="img" src={previewUrl} alt="Prévia" sx={{ maxWidth: 200, borderRadius: 2 }} />
-              </Box>
-            )}
-          </FormControl>
-
           <Button type="submit" variant="contained" size="large" sx={{ mt: 2 }}>
             Enviar Reclamação
           </Button>
         </Box>
       </Paper>
-
-      <Box mt={4} textAlign="center" p={2}>
-        <Typography variant="caption" color="gray">
-          Sistema de Reclamações • Todos os direitos reservados • Suporte: suporte@email.com
-        </Typography>
-      </Box>
 
       <Snackbar open={success} autoHideDuration={3000}>
         <Alert severity="success">Reclamação enviada com sucesso!</Alert>
