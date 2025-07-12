@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 import {
   TextField, Button, Paper, Typography, Box, Snackbar,
   Alert, FormControl, Select, MenuItem, LinearProgress
@@ -7,34 +7,25 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Layout from '../components/Layout';
 import { formatCPF } from '../utils/formatters';
+import { useAuth } from '../contexts/AuthContext';
 
 const ComplaintForm: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('média');
-  const [name, setName] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [email, setEmail] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get('/users/me')
-      .then(res => {
-        setName(res.data.name);
-        setCpf(res.data.cpf);
-        setEmail(res.data.email);
-      })
-      .catch(() => {
-        alert('Erro ao buscar dados do usuário');
-      });
-  }, []);
+  const { user } = useAuth();
+  const name = user?.name || '';
+  const cpf = user?.cpf || '';
+  const email = user?.email || '';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
-      const res = await api.post('/complaints', {
+      await api.post('/complaints', {
         title,
         description,
         priority,

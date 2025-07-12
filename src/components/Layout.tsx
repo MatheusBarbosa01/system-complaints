@@ -10,39 +10,34 @@ import { styled } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../features/auth/authSlice';
-import { RootState } from '../app/store'; 
+import { useAuth } from '../contexts/AuthContext'; // Context API
 import api from '../api/axios';
 
 const drawerWidth = 240;
 
 const AppBar = styled(MuiAppBar, {
-    shouldForwardProp: (prop) => prop !== 'open',
-  })<{ open?: boolean }>(({ theme, open }) => ({
-    zIndex: theme.zIndex.drawer + 1,
-    backgroundColor: '#1f1f1f',
-    color: '#fff',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-    transition: theme.transitions.create(['width', 'margin'], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.leavingScreen,
-    }),
-    ...(open && {
-      marginLeft: drawerWidth,
-      width: `calc(100% - ${drawerWidth}px)`,
-    }),
-  }));
-  
+  shouldForwardProp: (prop) => prop !== 'open',
+})<{ open?: boolean }>(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  backgroundColor: '#1f1f1f',
+  color: '#fff',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+  transition: theme.transitions.create(['width', 'margin'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+  }),
+}));
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState('');
-  const dispatch = useDispatch();
+  const { token, logout } = useAuth(); // substitui Redux
   const navigate = useNavigate();
-
-  const token = useSelector((state: RootState) => state.auth.token);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -52,7 +47,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = () => {
     handleClose();
-    dispatch(logout());
+    logout(); // Context API
   };
 
   useEffect(() => {
@@ -119,26 +114,25 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Divider sx={{ borderColor: '#333' }} />
         <List>
           <ListItemButton onClick={() => navigate('/')}>
-          <Box mr={3}>
-            <MarkChatReadRoundedIcon fontSize='small'/>
-          </Box>
-          <ListItemText secondary="Minhas Reclamações" />
+            <Box mr={3}>
+              <MarkChatReadRoundedIcon fontSize='small' />
+            </Box>
+            <ListItemText secondary="Minhas Reclamações" />
           </ListItemButton>
 
           <ListItemButton onClick={() => navigate('/complaints/new')}>
             <Box mr={3}>
-              <PlaylistAddRoundedIcon fontSize='small'/>
+              <PlaylistAddRoundedIcon fontSize='small' />
             </Box>
-          <ListItemText secondary="Nova Reclamação" />
+            <ListItemText secondary="Nova Reclamação" />
           </ListItemButton>
 
           <ListItemButton onClick={() => navigate('/complaints/new')}>
             <Box mr={3}>
-              <DeleteSweepRoundedIcon fontSize='small'/>
+              <DeleteSweepRoundedIcon fontSize='small' />
             </Box>
-          <ListItemText secondary="Reclamações Excluídas" />
+            <ListItemText secondary="Reclamações Excluídas" />
           </ListItemButton>
-          
         </List>
       </Drawer>
 
