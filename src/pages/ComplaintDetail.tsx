@@ -6,7 +6,8 @@ import api from '../api/axios';
 import { ComplaintDetailDto } from '../features/complaints/complaintTypes';
 import {
   Box, Typography, Button, Paper, CircularProgress, Divider, Chip,
-  Snackbar, Alert
+  Snackbar, Alert,
+  Tooltip
 } from '@mui/material';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import { ChatBubble } from '../components/ChatBubble';
@@ -135,14 +136,44 @@ const ComplaintDetail: React.FC = () => {
         <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <ChatBubble>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setIsModalOpen(true)}
-                sx={{ position: 'absolute', top: 12, right: 24 }}
+              <Tooltip
+                title={
+                  complaint.status !== 'PENDENTE'
+                    ? 'Edição indisponível para reclamações resolvidas ou não concluídas.'
+                    : 'Editar reclamação'
+                }
+                placement="left-end"
+                arrow
               >
-                Editar
-              </Button>
+                <Box
+                  onClick={() => {
+                    if (complaint.status === 'PENDENTE') setIsModalOpen(true);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 24,
+                    px: 2,
+                    py: 0.5,
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 1,
+                    fontSize: '0.75rem',
+                    color: complaint.status === 'PENDENTE' ? 'primary.main' : 'grey.500',
+                    cursor: complaint.status === 'PENDENTE' ? 'pointer' : 'not-allowed',
+                    opacity: complaint.status === 'PENDENTE' ? 1 : 0.5,
+                    transition: '0.3s',
+                    '&:hover': {
+                      backgroundColor:
+                        complaint.status === 'PENDENTE' ? 'primary.dark' : 'transparent',
+                      color:
+                        complaint.status === 'PENDENTE' ? 'white' : 'grey.500',
+                    },
+                  }}
+                >
+                  Editar
+                </Box>
+              </Tooltip>
 
               <Chip
                 label={`Criado em: ${new Date(complaint.createdAt).toLocaleDateString('pt-br')} por ${complaint.email}`}
@@ -190,14 +221,42 @@ const ComplaintDetail: React.FC = () => {
               />
             </Typography>
             <Box mt={2}>
-              <Button
-                variant="contained"
-                color="error"
-                fullWidth
-                onClick={handleDelete}
+              <Tooltip
+                title={
+                  complaint.status !== 'PENDENTE'
+                    ? 'Você só pode excluir reclamações com status PENDENTE.'
+                    : 'Excluir reclamação'
+                }
+                placement="bottom"
+                arrow
               >
-                Excluir
-              </Button>
+                <Box
+                  onClick={() => {
+                    if (complaint.status === 'PENDENTE') {
+                      handleDelete();
+                    }
+                  }}
+                  sx={{
+                    width: '100%',
+                    textAlign: 'center',
+                    backgroundColor:
+                      complaint.status === 'PENDENTE' ? 'error.main' : 'grey.700',
+                    color: 'white',
+                    py: 1,
+                    borderRadius: 1,
+                    cursor: complaint.status === 'PENDENTE' ? 'pointer' : 'not-allowed',
+                    opacity: complaint.status === 'PENDENTE' ? 1 : 0.6,
+                    transition: '0.3s',
+                    '&:hover': {
+                      backgroundColor:
+                        complaint.status === 'PENDENTE' ? 'error.dark' : 'grey.700',
+                    },
+                  }}
+                >
+                  Excluir
+                </Box>
+              </Tooltip>
+
             </Box>
           </Paper>
         </Box>
