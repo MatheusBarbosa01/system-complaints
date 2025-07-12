@@ -1,9 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { useDispatch } from 'react-redux';
-import { setToken } from '../features/auth/authSlice';
-import { AppDispatch } from '../app/store';
+import { useAuth } from '../contexts/AuthContext';
 import {
   TextField, Button, Paper, Typography, Box
 } from '@mui/material';
@@ -12,13 +10,13 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  const { setToken } = useAuth();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const res = await api.post<{ token: string }>('/login', { email, password });
-      dispatch(setToken(res.data.token));
+      setToken(res.data.token); // agora usando o contexto
       navigate('/');
     } catch {
       alert('Erro ao logar');
