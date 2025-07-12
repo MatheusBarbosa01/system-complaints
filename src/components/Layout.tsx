@@ -10,7 +10,7 @@ import { styled } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Context API
+import { useAuth } from '../contexts/AuthContext'; 
 import api from '../api/axios';
 
 const drawerWidth = 240;
@@ -36,7 +36,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState('');
-  const { token, logout } = useAuth(); // substitui Redux
+  const { token, logout } = useAuth(); 
   const navigate = useNavigate();
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -47,7 +47,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = () => {
     handleClose();
-    logout(); // Context API
+    logout(); 
   };
 
   useEffect(() => {
