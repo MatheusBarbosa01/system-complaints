@@ -1,25 +1,66 @@
 import React, { useEffect } from 'react';
-import { Typography, Box, CircularProgress, Alert, Grid } from '@mui/material';
+import {
+  Typography, Box, CircularProgress, Alert, Paper, Select, MenuItem, Stack, Button
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchComplaints } from '../features/complaints/complaintsSlice';
-import { RootState, AppDispatch } from '../app/store';
-import { ComplaintListDto } from '../features/complaints/complaintTypes';
 import Layout from '../components/Layout';
 import ComplaintCard from '../components/ComplaintCard';
+import { useComplaints } from '../contexts/ComplaintsContext';
+
+type PriorityFilter = 'todas' | 'BAIXA' | 'MEDIA' | 'ALTA';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-  const { list, status, error } = useSelector((state: RootState) => state.complaints);
+  const {
+    list,
+    status,
+    page,
+    totalPages,
+    priorityFilter,
+    setPage,
+    setPriorityFilter,
+  } = useComplaints();
 
   useEffect(() => {
-    dispatch(fetchComplaints());
-  }, [dispatch]);
+    setPage(0);
+  }, [priorityFilter]);
+
+  const countByStatus = {
+    total: list.length,
+    abertas: list.filter(c => c.status === 'PENDENTE').length,
+    resolvidas: list.filter(c => c.status === 'RESOLVIDO').length,
+    canceladas: list.filter(c => c.status === 'NAO_CONCLUIDO').length,
+  };
 
   return (
     <Layout>
-      <Typography variant="h4" gutterBottom>Minhas Reclamações</Typography>
+      <Typography variant="h4" gutterBottom>
+        Minhas Reclamações
+      </Typography>
+      <Typography variant="subtitle1" mb={3}>
+        Aqui estão listadas todas as suas reclamações ativas.
+      </Typography>
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
+        <StatusCard label="Total" value={countByStatus.total} color="#1976d2" textColor="white" />
+        <StatusCard label="Abertas" value={countByStatus.abertas} color="#ffa726" textColor="black" />
+        <StatusCard label="Resolvidas" value={countByStatus.resolvidas} color="#66bb6a" textColor="white" />
+      </Stack>
+
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="subtitle1">Filtrar por prioridade:</Typography>
+        <Select
+          size="small"
+          value={priorityFilter ?? 'todas'}
+          onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
+        >
+          <MenuItem value="todas">Todas</MenuItem>
+          <MenuItem value="BAIXA">Baixa</MenuItem>
+          <MenuItem value="MEDIA">Média</MenuItem>
+          <MenuItem value="ALTA">Alta</MenuItem>
+        </Select>
+      </Box>
+
       {status === 'loading' && (
         <Box textAlign="center" mt={4}>
           <CircularProgress />
@@ -27,26 +68,63 @@ const Dashboard: React.FC = () => {
         </Box>
       )}
 
-      {status === 'failed' && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Ocorreu um erro: {error}
-        </Alert>
-      )}
-
       {status === 'succeeded' && list.length === 0 && (
-        <Alert severity="info">Nenhuma reclamação registrada.</Alert>
+        <Alert severity="info">Nenhuma reclamação encontrada com os filtros selecionados.</Alert>
       )}
 
-      <Grid container spacing={2}>
+      <Box
+        display="grid"
+        gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }}
+        gap={2}
+      >
         {status === 'succeeded' &&
-          list.map((c: ComplaintListDto) => (
-            <Grid key={c.id} sx={{ width: '100%', maxWidth: 400, flexGrow: 1 }}>
-              <ComplaintCard complaint={c} onClick={() => navigate(`/complaints/${c.id}`)} />
-            </Grid>
+          list.map((c) => (
+            <ComplaintCard
+              key={c.id}
+              complaint={c}
+              onClick={() => navigate(`/complaints/${c.id}`)}
+            />
           ))}
-      </Grid>
+      </Box>
+      
+      {status === 'succeeded' && totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+            >
+              &lt;
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page + 1)}
+              disabled={page + 1 >= totalPages}
+            >
+              &gt;
+            </Button>
+          </Stack>
+        </Box>
+      )}
     </Layout>
   );
 };
+
+interface StatusCardProps {
+  label: string;
+  value: number;
+  color: string;
+  textColor: string;
+}
+
+const StatusCard: React.FC<StatusCardProps> = ({ label, value, color, textColor }) => (
+  <Paper sx={{ flex: 1, p: 2, textAlign: 'center', bgcolor: color, color: textColor }}>
+    <Typography variant="subtitle1">{label}</Typography>
+    <Typography variant="h5">{value}</Typography>
+  </Paper>
+);
 
 export default Dashboard;

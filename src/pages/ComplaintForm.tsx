@@ -1,68 +1,53 @@
-import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
 import {
   TextField, Button, Paper, Typography, Box, Snackbar,
-  Alert, FormControl, Select, MenuItem, LinearProgress, IconButton
+  Alert, FormControl, Select, MenuItem, LinearProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Layout from '../components/Layout';
 import { formatCPF } from '../utils/formatters';
+import { useAuth } from '../contexts/AuthContext';
+import { ComplaintPriority } from '../features/complaints/complaintTypes';
 
 const ComplaintForm: React.FC = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('média');
-  const [name, setName] = useState('');
-  const [cpf, setCpf] = useState('');
-  const [email, setEmail] = useState('');
+  const [priority, setPriority] = useState<ComplaintPriority>(ComplaintPriority.MEDIA);
   const [success, setSuccess] = useState(false);
-  const [attachment, setAttachment] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [openDialog, setOpenDialog] = useState(false);
 
-  useEffect(() => {
-    api.get('/users/me')
-      .then(res => {
-        setName(res.data.name);
-        setCpf(res.data.cpf);
-        setEmail(res.data.email);
-      })
-      .catch(() => {
-        alert('Erro ao buscar dados do usuário');
-      });
-  }, []);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const name = user?.name || '';
+  const cpf = user?.cpf || '';
+  const email = user?.email || '';
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setPriority(ComplaintPriority.MEDIA);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('priority', priority);
-    if (attachment) {
-      formData.append('attachment', attachment);
-    }
-
     try {
-      await api.post('/complaints', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      await api.post('/complaints', { title, description, priority });
       setSuccess(true);
-      setTimeout(() => navigate('/'), 1500);
+      setOpenDialog(true);
     } catch {
       alert('Erro ao criar reclamação');
     }
   };
 
-  const handleAttachmentChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAttachment(file);
-      setPreviewUrl(URL.createObjectURL(file));
+  const handleDialogClose = (option: 'yes' | 'no') => {
+    setOpenDialog(false);
+    if (option === 'yes') {
+      resetForm();
+    } else {
+      setTimeout(() => navigate('/'), 1000); 
     }
   };
 
@@ -80,7 +65,6 @@ const ComplaintForm: React.FC = () => {
       </Typography>
 
       <Box display="flex" alignItems="center" gap={1} mb={1}>
-        <ReportProblemIcon sx={{ fontSize: 30, color: '#1976d2' }} />
         <Typography variant="h6" fontWeight="bold">Reclamação do Usuário</Typography>
       </Box>
 
@@ -100,13 +84,7 @@ const ComplaintForm: React.FC = () => {
         <Typography variant="body2"><strong>Email:</strong> {email}</Typography>
       </Box>
 
-      <Paper elevation={3} sx={{
-        p: 4,
-        maxWidth: 700,
-        mx: 'auto',
-        borderLeft: '6px solid #1976d2',
-        boxShadow: '0px 0px 8px rgba(25, 118, 210, 0.15)',
-      }}>
+      <Paper elevation={3} sx={{ p: 4, maxWidth: 700, mx: 'auto', borderLeft: '6px solid #1976d2' }}>
         <Typography variant="subtitle1" gutterBottom>
           Olá, <strong>{name || 'usuário'}</strong>, preencha os seguintes campos para enviar sua reclamação:
         </Typography>
@@ -119,14 +97,6 @@ const ComplaintForm: React.FC = () => {
               onChange={e => setTitle(e.target.value)}
               required
               placeholder="Digite o título da sua reclamação"
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#1976d2' },
-                  '&:hover fieldset': { borderColor: '#115293' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
             />
           </FormControl>
 
@@ -139,14 +109,6 @@ const ComplaintForm: React.FC = () => {
               onChange={e => setDescription(e.target.value)}
               required
               placeholder="Descreva o problema com detalhes"
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: '#1976d2' },
-                  '&:hover fieldset': { borderColor: '#115293' },
-                  '&.Mui-focused fieldset': { borderColor: '#1976d2' },
-                },
-              }}
             />
           </FormControl>
 
@@ -156,43 +118,11 @@ const ComplaintForm: React.FC = () => {
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
               required
-              color="primary"
-              sx={{
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#1976d2',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#115293',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#1976d2',
-                },
-              }}
             >
-              <MenuItem value="baixa">Baixa</MenuItem>
-              <MenuItem value="média">Média</MenuItem>
-              <MenuItem value="alta">Alta</MenuItem>
+              <MenuItem value={ComplaintPriority.BAIXA}>Baixa</MenuItem>
+              <MenuItem value={ComplaintPriority.MEDIA}>Média</MenuItem>
+              <MenuItem value={ComplaintPriority.ALTA}>Alta</MenuItem>
             </Select>
-          </FormControl>
-
-          <FormControl fullWidth>
-            <Typography fontSize={14} fontWeight="bold" color="primary" mb={0.5}>Anexar imagem (opcional):</Typography>
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<UploadFileIcon />}
-              sx={{ borderColor: '#1976d2', color: '#1976d2' }}
-            >
-              Escolher arquivo
-              <input type="file" accept="image/*" hidden onChange={handleAttachmentChange} />
-            </Button>
-
-            {previewUrl && (
-              <Box mt={2}>
-                <Typography fontSize={12} color="gray">Pré-visualização:</Typography>
-                <Box component="img" src={previewUrl} alt="Prévia" sx={{ maxWidth: 200, borderRadius: 2 }} />
-              </Box>
-            )}
           </FormControl>
 
           <Button type="submit" variant="contained" size="large" sx={{ mt: 2 }}>
@@ -201,15 +131,27 @@ const ComplaintForm: React.FC = () => {
         </Box>
       </Paper>
 
-      <Box mt={4} textAlign="center" p={2}>
-        <Typography variant="caption" color="gray">
-          Sistema de Reclamações • Todos os direitos reservados • Suporte: suporte@email.com
-        </Typography>
-      </Box>
-
-      <Snackbar open={success} autoHideDuration={3000}>
-        <Alert severity="success">Reclamação enviada com sucesso!</Alert>
+      <Snackbar
+        open={success}
+        autoHideDuration={3000}
+        onClose={() => setSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" onClose={() => setSuccess(false)}>
+          Reclamação enviada com sucesso!
+        </Alert>
       </Snackbar>
+
+      <Dialog open={openDialog} onClose={() => handleDialogClose('no')}>
+        <DialogTitle>Deseja fazer outra reclamação?</DialogTitle>
+        <DialogContent>
+          <Typography>Você pode enviar outra agora ou voltar para a página inicial.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleDialogClose('yes')}>Sim</Button>
+          <Button onClick={() => handleDialogClose('no')} autoFocus>Não</Button>
+        </DialogActions>
+      </Dialog>
     </Layout>
   );
 };

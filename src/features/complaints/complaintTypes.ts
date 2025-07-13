@@ -4,6 +4,8 @@ export interface ComplaintListDto {
   resumedDescription: string;
   status: string;
   createdAt: string;
+  deletedAt?:string | null;
+  priority: string;
 }
   
 export interface ComplaintDetailDto {
@@ -14,6 +16,7 @@ export interface ComplaintDetailDto {
   status: string;
   cpf: string;
   email: string;
+  priority: string
 }
 
 export interface ComplaintUpdateDto{
@@ -26,4 +29,9 @@ export enum ComplaintStatusEnum {
   RESOLVIDO = 'RESOLVIDO',
   NAO_CONCLUIDO = 'NAO_CONCLUIDO'
 }
-  
+
+export enum ComplaintPriority{
+  BAIXA = 'BAIXA',
+  MEDIA = 'MEDIA',
+  ALTA = 'ALTA'
+}

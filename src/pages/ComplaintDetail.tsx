@@ -5,29 +5,32 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { ComplaintDetailDto } from '../features/complaints/complaintTypes';
 import {
-  Box, Typography, Button, Paper, CircularProgress, Divider, Grid, Chip,
-  Snackbar,
-  Alert
+  Box, Typography, Button, Paper, CircularProgress, Divider, Chip,
+  Snackbar, Alert,
+  Tooltip
 } from '@mui/material';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../app/store'; 
 import { ChatBubble } from '../components/ChatBubble';
-import { fetchComplaints } from '../features/complaints/complaintsSlice';
 import { formatCPF } from '../utils/formatters';
 import { EditComplaintModal } from '../components/EditComplaintModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useComplaints } from '../contexts/ComplaintsContext';
 
 const ComplaintDetail: React.FC = () => {
-  const token = useSelector((state: RootState) => state.auth.token);
-  const { list } = useSelector((state: RootState) => state.complaints);
+  const { user } = useAuth();
+  const { list, fetchComplaints } = useComplaints();
   const [userName, setUserName] = useState('');
   const { id } = useParams<{ id: string }>();
   const [complaint, setComplaint] = useState<ComplaintDetailDto | null>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [localPage, setLocalPage] = useState(0);
+
+  const itemsPerPage = 5;
+  const localTotalPages = Math.ceil(list.length / itemsPerPage);
+  const paginatedList = list.slice(localPage * itemsPerPage, (localPage + 1) * itemsPerPage);
 
   const handleSaveComplaint = async (desc: string, stat: string) => {
     setIsUpdating(true);
@@ -46,12 +49,14 @@ const ComplaintDetail: React.FC = () => {
       setIsUpdating(false);
     }
   };
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
   
   useEffect(() => {
-  if (list.length === 0) {
-      dispatch(fetchComplaints());
-  }
-  }, [dispatch, list.length]);
+    setLocalPage(0);
+  }, [list]);
 
   useEffect(() => {
     api.get<ComplaintDetailDto>(`/complaints/${id}`).then(res => setComplaint(res.data));
@@ -65,17 +70,8 @@ const ComplaintDetail: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get('/users/me');
-        setUserName(res.data.name);
-      } catch (err) {
-        console.error('Erro ao buscar usuário logado', err);
-      }
-    };
-
-    if (token) fetchUser();
-  }, [token]);
+    if (user?.name) setUserName(user.name);
+  }, [user]);
 
   if (!complaint) return <CircularProgress />;
 
@@ -105,46 +101,93 @@ const ComplaintDetail: React.FC = () => {
           UNIDADE DE RECLAMAÇÕES
         </Typography>
       </Box>
-  
+
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Box sx={{ width: 220 }}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>Reclamações</Typography>
-            <Divider />
-            <Box sx={{ mt: 1 }}>
-              {list.map((complaint) => (
-                <Typography
-                  key={complaint.id}
-                  onClick={() => navigate(`/complaints/${complaint.id}`)}
-                  sx={{
-                    my: 1,
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    color: String(complaint.id) == id ? '#1976d2' : 'white',
-                    fontWeight: String(complaint.id) == id ? 'bold' : 'normal',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    }
-                  }}
-                >
-                  {complaint.title}
-                </Typography>
-              ))}
-            </Box>
-          </Paper>
-        </Box>
-  
+      <Box sx={{ width: 220 }}>
+        <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="h6" gutterBottom>Reclamações</Typography>
+          <Divider />
+          <Box sx={{ mt: 1, flex: 1, overflowY: 'auto' }}>
+            {paginatedList.map(c => (
+              <Typography
+                key={c.id}
+                onClick={() => navigate(`/complaints/${c.id}`)}
+                sx={{
+                  my: 1,
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  color: String(c.id) === id ? '#1976d2' : 'white',
+                  fontWeight: String(c.id) === id ? 'bold' : 'normal',
+                  '&:hover': { textDecoration: 'underline' }
+                }}
+              >
+                {c.title}
+              </Typography>
+            ))}
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setLocalPage((p) => Math.max(p - 1, 0))}
+              disabled={localPage === 0}
+            >
+              &lt;
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setLocalPage((p) => Math.min(p + 1, localTotalPages - 1))}
+              disabled={localPage + 1 >= localTotalPages}
+            >
+              &gt;
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
+
         <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <ChatBubble>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setIsModalOpen(true)}
-                sx={{ position: 'absolute', top: 12, right: 24 }}
+              <Tooltip
+                title={
+                  complaint.status !== 'PENDENTE'
+                    ? 'Edição indisponível para reclamações resolvidas ou não concluídas.'
+                    : 'Editar reclamação'
+                }
+                placement="left-end"
+                arrow
               >
-                Editar
-              </Button>
+                <Box
+                  onClick={() => {
+                    if (complaint.status === 'PENDENTE') setIsModalOpen(true);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 24,
+                    px: 2,
+                    py: 0.5,
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 1,
+                    fontSize: '0.75rem',
+                    color: complaint.status === 'PENDENTE' ? 'primary.main' : 'grey.500',
+                    cursor: complaint.status === 'PENDENTE' ? 'pointer' : 'not-allowed',
+                    opacity: complaint.status === 'PENDENTE' ? 1 : 0.5,
+                    transition: '0.3s',
+                    '&:hover': {
+                      backgroundColor:
+                        complaint.status === 'PENDENTE' ? 'primary.dark' : 'transparent',
+                      color:
+                        complaint.status === 'PENDENTE' ? 'white' : 'grey.500',
+                    },
+                  }}
+                >
+                  Editar
+                </Box>
+              </Tooltip>
 
               <Chip
                 label={`Criado em: ${new Date(complaint.createdAt).toLocaleDateString('pt-br')} por ${complaint.email}`}
@@ -158,15 +201,15 @@ const ComplaintDetail: React.FC = () => {
                   <Typography
                     textAlign="end"
                     fontStyle="italic"
-                    fontSize={7}
+                    fontSize={9}
                   >
-                    Última atualização feita em: {new Date(complaint.updatedAt).toLocaleDateString('pt-BR')}
+                    Última atualização feita em: {new Date(complaint.updatedAt).toLocaleDateString('pt-BR')} às {new Date(complaint.updatedAt).toLocaleTimeString('pt-br')}
                   </Typography>
-              )}            
+              )}
             </ChatBubble>
           </Paper>
         </Box>
-  
+
         <Box sx={{ width: 260 }}>
           <Paper sx={{ p: 2, height: '100%' }}>
             <Typography variant="h6" gutterBottom>Relatório</Typography>
@@ -192,44 +235,70 @@ const ComplaintDetail: React.FC = () => {
               />
             </Typography>
             <Box mt={2}>
-              <Button
-                variant="contained"
-                color="error"
-                fullWidth
-                onClick={handleDelete}
+              <Tooltip
+                title={
+                  complaint.status !== 'PENDENTE'
+                    ? 'Você só pode excluir reclamações com status PENDENTE.'
+                    : 'Excluir reclamação'
+                }
+                placement="bottom"
+                arrow
               >
-                Excluir
-              </Button>
+                <Box
+                  onClick={() => {
+                    if (complaint.status === 'PENDENTE') {
+                      handleDelete();
+                    }
+                  }}
+                  sx={{
+                    width: '100%',
+                    textAlign: 'center',
+                    backgroundColor:
+                      complaint.status === 'PENDENTE' ? 'error.main' : 'grey.700',
+                    color: 'white',
+                    py: 1,
+                    borderRadius: 1,
+                    cursor: complaint.status === 'PENDENTE' ? 'pointer' : 'not-allowed',
+                    opacity: complaint.status === 'PENDENTE' ? 1 : 0.6,
+                    transition: '0.3s',
+                    '&:hover': {
+                      backgroundColor:
+                        complaint.status === 'PENDENTE' ? 'error.dark' : 'grey.700',
+                    },
+                  }}
+                >
+                  Excluir
+                </Box>
+              </Tooltip>
+
             </Box>
           </Paper>
         </Box>
       </Box>
 
       {complaint && (
-      <EditComplaintModal
-        open={isModalOpen}
-        initialDescription={complaint.description}
-        initialStatus={complaint.status}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveComplaint}
-        loading={isUpdating}
-      />
-    )}
+        <EditComplaintModal
+          open={isModalOpen}
+          initialDescription={complaint.description}
+          initialStatus={complaint.status}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveComplaint}
+          loading={isUpdating}
+        />
+      )}
 
-    <Snackbar
-      open={snackbarOpen}
-      autoHideDuration={3000}
-      onClose={() => setSnackbarOpen(false)}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-    >
-      <Alert severity="success" sx={{ width: '100%' }}>
-        Reclamação atualizada com sucesso!
-      </Alert>
-    </Snackbar>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          Reclamação atualizada com sucesso!
+        </Alert>
+      </Snackbar>
     </Box>
-    
   );
-  
 };
 
 export default ComplaintDetail;
