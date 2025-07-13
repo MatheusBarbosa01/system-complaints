@@ -47,10 +47,9 @@ const ComplaintDetail: React.FC = () => {
   };
 
   useEffect(() => {
-    if (list.length === 0) {
-      fetchComplaints();
-    }
-  }, [list.length]);
+    fetchComplaints();
+  }, []);
+  
 
   useEffect(() => {
     api.get<ComplaintDetailDto>(`/complaints/${id}`).then(res => setComplaint(res.data));
