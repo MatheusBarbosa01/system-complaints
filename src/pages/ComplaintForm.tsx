@@ -2,8 +2,9 @@ import React, { useState, FormEvent } from 'react';
 import {
   TextField, Button, Paper, Typography, Box, Snackbar,
   Alert, FormControl, Select, MenuItem, LinearProgress,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions,
 } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Layout from '../components/Layout';
@@ -17,6 +18,7 @@ const ComplaintForm: React.FC = () => {
   const [priority, setPriority] = useState<ComplaintPriority>(ComplaintPriority.MEDIA);
   const [success, setSuccess] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [complaintId, setComplaintId] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -28,28 +30,21 @@ const ComplaintForm: React.FC = () => {
     setTitle('');
     setDescription('');
     setPriority(ComplaintPriority.MEDIA);
+    setComplaintId(null);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     try {
-      await api.post('/complaints', { title, description, priority });
+      const response = await api.post('/complaints', { title, description, priority });
+      const newId = response.data.id;
+      setComplaintId(newId);
       setSuccess(true);
-      setOpenDialog(true);
     } catch {
       alert('Erro ao criar reclamação');
     }
   };
 
-  const handleDialogClose = (option: 'yes' | 'no') => {
-    setOpenDialog(false);
-    if (option === 'yes') {
-      resetForm();
-    } else {
-      setTimeout(() => navigate('/'), 1000); 
-    }
-  };
 
   return (
     <Layout>
@@ -131,27 +126,31 @@ const ComplaintForm: React.FC = () => {
         </Box>
       </Paper>
 
-      <Snackbar
-        open={success}
-        autoHideDuration={3000}
-        onClose={() => setSuccess(false)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccess(false)}>
-          Reclamação enviada com sucesso!
-        </Alert>
-      </Snackbar>
+      <Dialog open={success} onClose={() => setSuccess(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center' }}>
+          <CheckCircleIcon color="success" sx={{ fontSize: 48 }} />
+          <Typography variant="h6" mt={1}>
+            Reclamação enviada com sucesso!
+          </Typography>
+        </DialogTitle>
 
-      <Dialog open={openDialog} onClose={() => handleDialogClose('no')}>
-        <DialogTitle>Deseja fazer outra reclamação?</DialogTitle>
-        <DialogContent>
-          <Typography>Você pode enviar outra agora ou voltar para a página inicial.</Typography>
+        <DialogContent sx={{ textAlign: 'center' }}>
+          <Typography>Sua solicitação foi registrada com sucesso no sistema.</Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => handleDialogClose('yes')}>Sim</Button>
-          <Button onClick={() => handleDialogClose('no')} autoFocus>Não</Button>
+
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setSuccess(false);
+              if (complaintId) navigate(`/complaints/${complaintId}`);
+            }}
+          >
+            Continuar
+          </Button>
         </DialogActions>
       </Dialog>
+
     </Layout>
   );
 };
