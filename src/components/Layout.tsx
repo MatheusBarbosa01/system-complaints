@@ -36,7 +36,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState('');
-  const { token, logout } = useAuth(); 
+  const { user, logout } = useAuth(); 
   const navigate = useNavigate();
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -51,17 +51,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get('/users/me');
-        setUserName(res.data.name);
-      } catch (err) {
-        console.error('Erro ao buscar usuário logado', err);
-      }
-    };
-
-    if (token) fetchUser();
-  }, [token]);
+    if (user?.name) setUserName(user.name);
+  }, [user]);
 
   return (
     <Box sx={{ display: 'flex' }}>

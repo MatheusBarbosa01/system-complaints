@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import ComplaintForm from './pages/ComplaintForm';
 import ComplaintDetail from './pages/ComplaintDetail';
@@ -20,6 +21,7 @@ const App: React.FC = () => (
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/complaints/new" element={<PrivateRoute><ComplaintForm /></PrivateRoute>} />
           <Route path="/complaints/:id" element={<PrivateRoute><ComplaintDetail /></PrivateRoute>} />
