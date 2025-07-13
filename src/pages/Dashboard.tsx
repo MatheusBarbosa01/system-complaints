@@ -52,7 +52,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <Typography variant="h4" gutterBottom>Minhas Reclamações</Typography>
+      <Typography variant="h4" gutterBottom>
+        Minhas Reclamações
+      </Typography>
+      <Typography variant="subtitle1" mb={3}>
+        Aqui estão listadas todas as suas reclamações ativas.
+      </Typography>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
         <StatusCard label="Total" value={countByStatus.total} color="#1976d2" textColor="white" />
