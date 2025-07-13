@@ -118,7 +118,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <ListItemText secondary="Nova Reclamação" />
           </ListItemButton>
 
-          <ListItemButton onClick={() => navigate('/complaints/new')}>
+          <ListItemButton onClick={() => navigate('/complaints/deleted')}>
             <Box mr={3}>
               <DeleteSweepRoundedIcon fontSize='small' />
             </Box>

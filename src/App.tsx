@@ -9,6 +9,7 @@ import ComplaintDetail from './pages/ComplaintDetail';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ComplaintsProvider } from './contexts/ComplaintsContext';
+import DeletedComplaintsPage from './pages/DeletedComplaintsPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
@@ -24,6 +25,7 @@ const App: React.FC = () => (
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/complaints/new" element={<PrivateRoute><ComplaintForm /></PrivateRoute>} />
+          <Route path="/complaints/deleted" element={<PrivateRoute><DeletedComplaintsPage /></PrivateRoute>} />
           <Route path="/complaints/:id" element={<PrivateRoute><ComplaintDetail /></PrivateRoute>} />
         </Routes>
       </Router>
