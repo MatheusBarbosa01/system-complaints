@@ -1,11 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography, Box, CircularProgress, Alert, Paper, Stack,
   TextField, Button
 } from '@mui/material';
 import Layout from '../components/Layout';
-import { useComplaints } from '../contexts/ComplaintsContext';
 import DeletedComplaintCard from '../components/DeletedComplaintCard';
+import api from '../api/axios';
+import { ComplaintListDto } from '../features/complaints/complaintTypes';
+import { Page } from '../features/Page/PageType';
 
 function isToday(date: Date): boolean {
   const today = new Date();
@@ -22,16 +24,35 @@ const formatDateOnly = (date: string | Date | null | undefined): string | null =
 };
 
 const DeletedComplaintsPage: React.FC = () => {
-  const {
-    list,
-    status,
-    page,
-    totalPages,
-    fetchComplaints,
-    setPage,
-  } = useComplaints();
-
+  const [list, setList] = useState<ComplaintListDto[]>([]);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'succeeded' | 'failed'>('idle');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [dateFilter, setDateFilter] = useState('');
+
+  const fetchDeletedComplaints = async (pageNumber: number = 0) => {
+    setStatus('loading');
+    try {
+      const response = await api.get<Page<ComplaintListDto>>('/complaints/deleted', {
+        params: { page: pageNumber, size: 20 },
+      });
+      setList(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setPage(response.data.number);
+      setStatus('succeeded');
+    } catch (err) {
+      console.error(err);
+      setStatus('failed');
+    }
+  };
+
+  useEffect(() => {
+    fetchDeletedComplaints(page);
+  }, [page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [dateFilter]);
 
   const filteredList = list.filter((c) => {
     if (!dateFilter) return true;
@@ -42,14 +63,6 @@ const DeletedComplaintsPage: React.FC = () => {
     total: filteredList.length,
     hoje: filteredList.filter(c => c.deletedAt && isToday(new Date(c.deletedAt))).length,
   };
-
-  useEffect(() => {
-    setPage(0); 
-  }, [dateFilter]);
-
-  useEffect(() => {
-    fetchComplaints({ page });
-  }, [fetchComplaints, page]);
 
   return (
     <Layout>
