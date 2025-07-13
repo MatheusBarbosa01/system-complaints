@@ -12,6 +12,7 @@ interface ComplaintsContextType {
   pageSize: number;
   priorityFilter?: string;
   fetchComplaints: (options?: { page?: number; priority?: string }) => Promise<void>;
+  fetchDeletedComplaints: (options?: { page?: number; priority?: string }) => Promise<void>;
   setPriorityFilter: (priority?: string) => void;
   setPage: (page: number) => void;
 }
@@ -24,21 +25,21 @@ export const ComplaintsProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [page, setPageState] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(9);
   const [priorityFilter, setPriorityFilterState] = useState<string | undefined>(undefined);
 
   const fetchComplaints = async (options?: { page?: number; priority?: string }) => {
     setStatus('loading');
     setError(null);
-
+  
     const currentPage = options?.page ?? page;
     const currentPriority = options?.priority ?? priorityFilter;
-
+  
     try {
       let response;
       if (currentPriority && currentPriority !== 'todas') {
-        response = await api.post<Page<ComplaintListDto>>('/complaints/filter', 
-          { priority: currentPriority }, 
+        response = await api.post<Page<ComplaintListDto>>('/complaints/filter',
+          { priority: currentPriority },
           { params: { page: currentPage, size: pageSize } }
         );
       } else {
@@ -46,23 +47,42 @@ export const ComplaintsProvider = ({ children }: { children: ReactNode }) => {
           params: { page: currentPage, size: pageSize }
         });
       }
-
+  
       setList(Array.isArray(response.data.content) ? response.data.content : []);
       setTotalPages(response.data.totalPages);
-      setPageState(currentPage);
+      setPageState(currentPage); 
       setStatus('succeeded');
       setError(null);
-      setPriorityFilterState(currentPriority);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err.message || 'Erro ao buscar reclamações.';
       setStatus('failed');
       setError(msg);
     }
   };
-
+  
+  const fetchDeletedComplaints = async (options?: { page?: number; priority?: string }) => {
+    setStatus('loading');
+    setError(null);
+    const currentPage = options?.page ?? page;
+  
+    try {
+      const response = await api.get<Page<ComplaintListDto>>('/complaints/deleted', {
+        params: { page: currentPage, size: pageSize }
+      });
+  
+      setList(Array.isArray(response.data.content) ? response.data.content : []);
+      setTotalPages(response.data.totalPages);
+      setPageState(currentPage);
+      setStatus('succeeded');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err.message || 'Erro ao buscar reclamações.';
+      setStatus('failed');
+      setError(msg);
+    }
+  };
+  
   const setPriorityFilter = (priority?: string) => {
     setPriorityFilterState(priority);
-    fetchComplaints({ page: 0, priority }); 
   };
 
   const setPage = (page: number) => {
@@ -81,6 +101,7 @@ export const ComplaintsProvider = ({ children }: { children: ReactNode }) => {
         pageSize,
         priorityFilter,
         fetchComplaints,
+        fetchDeletedComplaints,
         setPriorityFilter,
         setPage,
       }}
