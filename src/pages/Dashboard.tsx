@@ -1,47 +1,29 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import {
-  Typography, Box, CircularProgress, Alert, Paper, Select, MenuItem, Stack
+  Typography, Box, CircularProgress, Alert, Paper, Select, MenuItem, Stack, Button
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import { ComplaintListDto } from '../features/complaints/complaintTypes';
 import Layout from '../components/Layout';
 import ComplaintCard from '../components/ComplaintCard';
-import { toast } from 'react-toastify';
+import { useComplaints } from '../contexts/ComplaintsContext';
 
 type PriorityFilter = 'todas' | 'BAIXA' | 'MEDIA' | 'ALTA';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [list, setList] = useState<ComplaintListDto[]>([]);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'succeeded' | 'failed'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('todas');
-
-  const loadComplaints = useCallback(async () => {
-    setStatus('loading');
-    setError(null);
-
-    try {
-      const response = priorityFilter === 'todas'
-        ? await api.get<ComplaintListDto[]>('/complaints')
-        : await api.post<ComplaintListDto[]>('/complaints/filter', {
-            priority: priorityFilter,
-          });
-
-      setList(response.data);
-      setStatus('succeeded');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Erro ao carregar reclamações.';
-      setError(msg);
-      setStatus('failed');
-      toast.error(msg);
-    }
-  }, [priorityFilter]);
+  const {
+    list,
+    status,
+    page,
+    totalPages,
+    priorityFilter,
+    setPage,
+    setPriorityFilter,
+  } = useComplaints();
 
   useEffect(() => {
-    loadComplaints();
-  }, [loadComplaints]);
+    setPage(0);
+  }, [priorityFilter]);
 
   const countByStatus = {
     total: list.length,
@@ -69,7 +51,7 @@ const Dashboard: React.FC = () => {
         <Typography variant="subtitle1">Filtrar por prioridade:</Typography>
         <Select
           size="small"
-          value={priorityFilter}
+          value={priorityFilter ?? 'todas'}
           onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
         >
           <MenuItem value="todas">Todas</MenuItem>
@@ -104,6 +86,29 @@ const Dashboard: React.FC = () => {
             />
           ))}
       </Box>
+      
+      {status === 'succeeded' && totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+            >
+              &lt;
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page + 1)}
+              disabled={page + 1 >= totalPages}
+            >
+              &gt;
+            </Button>
+          </Stack>
+        </Box>
+      )}
     </Layout>
   );
 };

@@ -1,60 +1,55 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Typography, Box, CircularProgress, Alert, Paper, Select,
-  MenuItem, Stack, InputLabel, FormControl, TextField
+  Typography, Box, CircularProgress, Alert, Paper, Stack,
+  TextField, Button
 } from '@mui/material';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/axios';
-import { ComplaintListDto } from '../features/complaints/complaintTypes';
 import Layout from '../components/Layout';
-import { toast } from 'react-toastify';
+import { useComplaints } from '../contexts/ComplaintsContext';
 import DeletedComplaintCard from '../components/DeletedComplaintCard';
 
+function isToday(date: Date): boolean {
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+}
+
+const formatDateOnly = (date: string | Date | null | undefined): string | null => {
+  const d = new Date(date ?? '');
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+};
+
 const DeletedComplaintsPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [list, setList] = useState<ComplaintListDto[]>([]);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'succeeded' | 'failed'>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>('');
+  const {
+    list,
+    status,
+    page,
+    totalPages,
+    fetchComplaints,
+    setPage,
+  } = useComplaints();
 
-  const loadDeletedComplaints = useCallback(async () => {
-    setStatus('loading');
-    setError(null);
-  
-    try {
-      const response = await api.get<ComplaintListDto[]>('/complaints/deleted');
-  
-      const formatDateOnly = (date: string | Date | null | undefined): string | null => {
-        const d = new Date(date ?? '');
-        return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
-      };
-      
-      const filtered = dateFilter
-      ? response.data.filter((c) => formatDateOnly(c.deletedAt) === dateFilter)
-      : response.data;
-    
-      setList(filtered);
-      setStatus('succeeded');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Erro ao carregar reclamações apagadas.';
-      setError(msg);
-      setStatus('failed');
-      toast.error(msg);
-    }
-  }, [dateFilter]);
-  
-  
+  const [dateFilter, setDateFilter] = useState('');
 
-  useEffect(() => {
-    loadDeletedComplaints();
-  }, [loadDeletedComplaints]);
+  const filteredList = list.filter((c) => {
+    if (!dateFilter) return true;
+    return formatDateOnly(c.deletedAt) === dateFilter;
+  });
 
   const count = {
-    total: list.length,
-    hoje: list.filter(c => c.deletedAt && isToday(new Date(c.deletedAt))).length,
+    total: filteredList.length,
+    hoje: filteredList.filter(c => c.deletedAt && isToday(new Date(c.deletedAt))).length,
   };
-  
+
+  useEffect(() => {
+    setPage(0); 
+  }, [dateFilter]);
+
+  useEffect(() => {
+    fetchComplaints({ page });
+  }, [fetchComplaints, page]);
 
   return (
     <Layout>
@@ -71,17 +66,15 @@ const DeletedComplaintsPage: React.FC = () => {
         <StatusCard label="Total" value={count.total} color="#9e9e9e" />
       </Stack>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
-
-        <TextField
-          label="Data da exclusão"
-          type="date"
-          size="small"
-          InputLabelProps={{ shrink: true }}
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-        />
-      </Stack>
+      <TextField
+        label="Data da exclusão"
+        type="date"
+        size="small"
+        InputLabelProps={{ shrink: true }}
+        value={dateFilter}
+        onChange={(e) => setDateFilter(e.target.value)}
+        sx={{ mb: 3 }}
+      />
 
       {status === 'loading' && (
         <Box textAlign="center" mt={4}>
@@ -90,8 +83,8 @@ const DeletedComplaintsPage: React.FC = () => {
         </Box>
       )}
 
-      {status === 'succeeded' && list.length === 0 && (
-        <Alert severity="info">Nenhuma reclamação apagada encontrada com os filtros selecionados.</Alert>
+      {status === 'succeeded' && filteredList.length === 0 && (
+        <Alert severity="info">Nenhuma reclamação encontrada com os filtros selecionados.</Alert>
       )}
 
       <Box
@@ -100,13 +93,36 @@ const DeletedComplaintsPage: React.FC = () => {
         gap={2}
       >
         {status === 'succeeded' &&
-          list.map((c) => (
-            <DeletedComplaintCard
-              key={c.id}
-              complaint={c}
-            />
+          filteredList.map((c) => (
+            <DeletedComplaintCard key={c.id} complaint={c} />
           ))}
       </Box>
+
+      {status === 'succeeded' && totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+            >
+              &lt;
+            </Button>
+            <Typography variant="body1">
+              Página {page + 1} de {totalPages}
+            </Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setPage(page + 1)}
+              disabled={page + 1 >= totalPages}
+            >
+              &gt;
+            </Button>
+          </Stack>
+        </Box>
+      )}
     </Layout>
   );
 };
@@ -123,15 +139,5 @@ const StatusCard: React.FC<StatusCardProps> = ({ label, value, color }) => (
     <Typography variant="h5">{value}</Typography>
   </Paper>
 );
-
-function isToday(date: Date): boolean {
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-}
-
 
 export default DeletedComplaintsPage;
