@@ -49,6 +49,9 @@ const ComplaintCard: React.FC<Props> = ({ complaint, onClick }) => {
           <Typography variant="body2" color="gray">
             Status: {complaint.status.replace(/_/g, ' ')}
           </Typography>
+          <Typography variant="body2" color="gray">
+            Prioridade: {complaint.priority}
+          </Typography>
         </CardContent>
       </Card>
     </Fade>

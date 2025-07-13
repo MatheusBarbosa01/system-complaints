@@ -17,7 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useComplaints } from '../contexts/ComplaintsContext';
 
 const ComplaintDetail: React.FC = () => {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const { list, fetchComplaints } = useComplaints();
 
   const [userName, setUserName] = useState('');
@@ -64,17 +64,8 @@ const ComplaintDetail: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get('/users/me');
-        setUserName(res.data.name);
-      } catch (err) {
-        console.error('Erro ao buscar usuário logado', err);
-      }
-    };
-
-    if (token) fetchUser();
-  }, [token]);
+    if (user?.name) setUserName(user.name);
+  }, [user]);
 
   if (!complaint) return <CircularProgress />;
 
@@ -187,9 +178,9 @@ const ComplaintDetail: React.FC = () => {
                   <Typography
                     textAlign="end"
                     fontStyle="italic"
-                    fontSize={7}
+                    fontSize={9}
                   >
-                    Última atualização feita em: {new Date(complaint.updatedAt).toLocaleDateString('pt-BR')}
+                    Última atualização feita em: {new Date(complaint.updatedAt).toLocaleDateString('pt-BR')} às {new Date(complaint.updatedAt).toLocaleTimeString('pt-br')}
                   </Typography>
               )}
             </ChatBubble>
