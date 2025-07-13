@@ -33,7 +33,7 @@ const AppBar = styled(MuiAppBar, {
 }));
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [userName, setUserName] = useState('');
   const { user, logout } = useAuth(); 
