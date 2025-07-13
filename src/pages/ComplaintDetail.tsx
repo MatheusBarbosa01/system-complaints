@@ -19,7 +19,6 @@ import { useComplaints } from '../contexts/ComplaintsContext';
 const ComplaintDetail: React.FC = () => {
   const { user } = useAuth();
   const { list, fetchComplaints } = useComplaints();
-
   const [userName, setUserName] = useState('');
   const { id } = useParams<{ id: string }>();
   const [complaint, setComplaint] = useState<ComplaintDetailDto | null>(null);
@@ -27,6 +26,11 @@ const ComplaintDetail: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [localPage, setLocalPage] = useState(0);
+
+  const itemsPerPage = 5;
+  const localTotalPages = Math.ceil(list.length / itemsPerPage);
+  const paginatedList = list.slice(localPage * itemsPerPage, (localPage + 1) * itemsPerPage);
 
   const handleSaveComplaint = async (desc: string, stat: string) => {
     setIsUpdating(true);
@@ -50,6 +54,9 @@ const ComplaintDetail: React.FC = () => {
     fetchComplaints();
   }, []);
   
+  useEffect(() => {
+    setLocalPage(0);
+  }, [list]);
 
   useEffect(() => {
     api.get<ComplaintDetailDto>(`/complaints/${id}`).then(res => setComplaint(res.data));
@@ -96,32 +103,49 @@ const ComplaintDetail: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'flex', gap: 2 }}>
-        <Box sx={{ width: 220 }}>
-          <Paper sx={{ p: 2, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>Reclamações</Typography>
-            <Divider />
-            <Box sx={{ mt: 1 }}>
-              {list.map((complaint) => (
-                <Typography
-                  key={complaint.id}
-                  onClick={() => navigate(`/complaints/${complaint.id}`)}
-                  sx={{
-                    my: 1,
-                    cursor: 'pointer',
-                    fontSize: '0.75rem',
-                    color: String(complaint.id) === id ? '#1976d2' : 'white',
-                    fontWeight: String(complaint.id) === id ? 'bold' : 'normal',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    }
-                  }}
-                >
-                  {complaint.title}
-                </Typography>
-              ))}
-            </Box>
-          </Paper>
-        </Box>
+      <Box sx={{ width: 220 }}>
+        <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="h6" gutterBottom>Reclamações</Typography>
+          <Divider />
+          <Box sx={{ mt: 1, flex: 1, overflowY: 'auto' }}>
+            {paginatedList.map(c => (
+              <Typography
+                key={c.id}
+                onClick={() => navigate(`/complaints/${c.id}`)}
+                sx={{
+                  my: 1,
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  color: String(c.id) === id ? '#1976d2' : 'white',
+                  fontWeight: String(c.id) === id ? 'bold' : 'normal',
+                  '&:hover': { textDecoration: 'underline' }
+                }}
+              >
+                {c.title}
+              </Typography>
+            ))}
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setLocalPage((p) => Math.max(p - 1, 0))}
+              disabled={localPage === 0}
+            >
+              &lt;
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setLocalPage((p) => Math.min(p + 1, localTotalPages - 1))}
+              disabled={localPage + 1 >= localTotalPages}
+            >
+              &gt;
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
 
         <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 2, height: '100%' }}>
