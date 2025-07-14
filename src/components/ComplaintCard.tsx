@@ -57,6 +57,9 @@ const ComplaintCard: React.FC<Props> = ({ complaint, onClick }) => {
               Status: {complaint.status.replace(/_/g, ' ')}
             </Typography>
             <Typography variant="body2" color="gray">
+              Data de criação: {new Date(complaint.createdAt).toLocaleDateString('pt-br')}
+            </Typography>
+            <Typography variant="body2" color="gray">
               Prioridade: {complaint.priority}
             </Typography>
           </CardContent>
