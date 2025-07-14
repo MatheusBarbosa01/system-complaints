@@ -33,3 +33,11 @@ npm install
 
 # 3. Inicie o projeto
 npm start
+```
+## 🔗 Backend (API)
+
+Este frontend consome a API REST disponível em:
+
+👉 [Repositório da API - system-complaints-api](https://github.com/MatheusBarbosa01/System-complaints-api.git)
+
+Certifique-se de que a API está rodando localmente (ex: `http://localhost:8080`) para que o frontend funcione corretamente.
